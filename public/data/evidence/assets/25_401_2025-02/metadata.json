@@ -1,0 +1,114 @@
+{
+  "status": "processed",
+  "before_date": "2025-02-03T04:23:44.102000Z",
+  "after_date": "2025-02-28T04:23:19.842000Z",
+  "before_id": "S2C_T46QGF_20250203T041457_L2A",
+  "after_id": "S2B_T46QGF_20250228T041602_L2A",
+  "product": "sentinel-2",
+  "clear_overlap_fraction": 0.985,
+  "before_clear_fraction": 0.9909,
+  "after_clear_fraction": 0.9876,
+  "valid_pixels": 61565,
+  "cell_pixels": 62500,
+  "resolution_m": 20,
+  "crs": "EPSG:32647",
+  "qa_method": "SCL 4 vegetation and 5 bare land; cloud/shadow/water/uncertain classes excluded",
+  "display": "SWIR2 / NIR / red, fixed reflectance stretch 0–0.5",
+  "candidate_threshold": 0.2,
+  "minimum_candidate_area_m2": 10000.0,
+  "candidate_count": 60,
+  "candidate_area_m2": 1811600,
+  "burn_interval": [
+    "2025-02-03",
+    "2025-02-28"
+  ],
+  "monthly_interval_contained": true,
+  "provenance": [
+    {
+      "id": "S2C_T46QGF_20250203T041457_L2A",
+      "date": "2025-02-03T04:23:44.102000Z",
+      "product": "sentinel-2",
+      "collection": "sentinel-2-c1-l2a",
+      "bands": [
+        {
+          "scale": 0.0001,
+          "offset": -0.1,
+          "source_url": "https://e84-earth-search-sentinel-data.s3.us-west-2.amazonaws.com/sentinel-2-c1-l2a/46/Q/GF/2025/2/S2C_T46QGF_20250203T041457_L2A/B8A.tif",
+          "source_band": "B8A",
+          "band": "nir",
+          "sha256": "2d332fbb4c25800715cb44d06ec38fee251248560210e9d03e1ba95e53cb676a"
+        },
+        {
+          "scale": 0.0001,
+          "offset": -0.1,
+          "source_url": "https://e84-earth-search-sentinel-data.s3.us-west-2.amazonaws.com/sentinel-2-c1-l2a/46/Q/GF/2025/2/S2C_T46QGF_20250203T041457_L2A/B12.tif",
+          "source_band": "B12",
+          "band": "swir",
+          "sha256": "e899bcd85126effb939a478add51bac7e8d06e7352a7fe76167ff25bd5ff0c84"
+        },
+        {
+          "scale": 0.0001,
+          "offset": -0.1,
+          "source_url": "https://e84-earth-search-sentinel-data.s3.us-west-2.amazonaws.com/sentinel-2-c1-l2a/46/Q/GF/2025/2/S2C_T46QGF_20250203T041457_L2A/B04.tif",
+          "source_band": "B04",
+          "band": "red",
+          "sha256": "18617c662c0239e85ade5b303258a50173715cd939c5e15c529dee384624cca4"
+        },
+        {
+          "scale": 1.0,
+          "offset": 0.0,
+          "source_url": "https://e84-earth-search-sentinel-data.s3.us-west-2.amazonaws.com/sentinel-2-c1-l2a/46/Q/GF/2025/2/S2C_T46QGF_20250203T041457_L2A/SCL.tif",
+          "source_band": "SCL",
+          "band": "qa",
+          "sha256": "9641a7f2d5080c0de3d331847198d54186c665748b58eddf5f2aceabb6f93ee3"
+        }
+      ]
+    },
+    {
+      "id": "S2B_T46QGF_20250228T041602_L2A",
+      "date": "2025-02-28T04:23:19.842000Z",
+      "product": "sentinel-2",
+      "collection": "sentinel-2-c1-l2a",
+      "bands": [
+        {
+          "scale": 0.0001,
+          "offset": -0.1,
+          "source_url": "https://e84-earth-search-sentinel-data.s3.us-west-2.amazonaws.com/sentinel-2-c1-l2a/46/Q/GF/2025/2/S2B_T46QGF_20250228T041602_L2A/B8A.tif",
+          "source_band": "B8A",
+          "band": "nir",
+          "sha256": "71ab01bb417baf9dda43d8a7020a86b4dc7fcea8975dd92d6d628f489b35e5e6"
+        },
+        {
+          "scale": 0.0001,
+          "offset": -0.1,
+          "source_url": "https://e84-earth-search-sentinel-data.s3.us-west-2.amazonaws.com/sentinel-2-c1-l2a/46/Q/GF/2025/2/S2B_T46QGF_20250228T041602_L2A/B12.tif",
+          "source_band": "B12",
+          "band": "swir",
+          "sha256": "39efd97322cbe0200dea79884bd5ee38b43b61088eed13ac01cdffb2f4c2e2d3"
+        },
+        {
+          "scale": 0.0001,
+          "offset": -0.1,
+          "source_url": "https://e84-earth-search-sentinel-data.s3.us-west-2.amazonaws.com/sentinel-2-c1-l2a/46/Q/GF/2025/2/S2B_T46QGF_20250228T041602_L2A/B04.tif",
+          "source_band": "B04",
+          "band": "red",
+          "sha256": "6a61733c385ebee2f81efef231403edf3ddfecc672f90daadee981518865a359"
+        },
+        {
+          "scale": 1.0,
+          "offset": 0.0,
+          "source_url": "https://e84-earth-search-sentinel-data.s3.us-west-2.amazonaws.com/sentinel-2-c1-l2a/46/Q/GF/2025/2/S2B_T46QGF_20250228T041602_L2A/SCL.tif",
+          "source_band": "SCL",
+          "band": "qa",
+          "sha256": "fe5ac326d42275872755221be65cb354c277e6eeb8ba57f96e94e8c8a23ed239"
+        }
+      ]
+    }
+  ],
+  "bounds_wgs84": [
+    95.45656979635119,
+    18.101316319441235,
+    95.50464699083247,
+    18.147286243506073
+  ]
+}

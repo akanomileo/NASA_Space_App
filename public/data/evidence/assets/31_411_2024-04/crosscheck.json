@@ -1,0 +1,68 @@
+{
+  "sample_id": "31_411_2024-04",
+  "product": "MCD64A1",
+  "collection": "6.1",
+  "collection_basis": "ORNL provider citation: doi:10.5067/MODIS/MCD64A1.061; REST response retains tile and processing date, not original HDF filename",
+  "provider": "NASA ORNL DAAC MODIS/VIIRS Global Subsets REST service",
+  "role": "cross_check_only",
+  "independent_truth": false,
+  "period": "2024-04",
+  "nominal_resolution_m": 500,
+  "pixel_size_m": 463.312716528,
+  "cell_pixels": 118,
+  "valid_pixels": 104,
+  "burned_pixels": 0,
+  "shortened_mapping_pixels": 0,
+  "burned_area_approx_m2": 0,
+  "burn_day_of_year": [],
+  "burn_date_uncertainty_days": null,
+  "first_day_range": [
+    70,
+    71
+  ],
+  "last_day_range": [
+    133,
+    136
+  ],
+  "qa": "Land bit 0, valid-data bit 1; exclude shortened mapping bit 2. Pixel-centre clipping.",
+  "limitation": "Coarse burned-area cross-check; active-fire information enters the MCD64A1 algorithm. Not an independent validation label.",
+  "source_url": "https://modis.ornl.gov/rst/api/v1/MCD64A1/subset?latitude=18.580461639867718&longitude=95.75528076233743&startDate=A2024092&endDate=A2024092&kmAboveBelow=4&kmLeftRight=4",
+  "raw_sha256": "5d683cf6b50e736d50d89675111bc4d7b7f9157dcbeb5114b3017da1dfb7ae04",
+  "source_metadata": [
+    {
+      "modis_date": "A2024092",
+      "calendar_date": "2024-04-01",
+      "band": "Burn_Date",
+      "tile": "h27v07",
+      "proc_date": "2024162182905"
+    },
+    {
+      "modis_date": "A2024092",
+      "calendar_date": "2024-04-01",
+      "band": "Burn_Date_Uncertainty",
+      "tile": "h27v07",
+      "proc_date": "2024162182905"
+    },
+    {
+      "modis_date": "A2024092",
+      "calendar_date": "2024-04-01",
+      "band": "First_Day",
+      "tile": "h27v07",
+      "proc_date": "2024162182905"
+    },
+    {
+      "modis_date": "A2024092",
+      "calendar_date": "2024-04-01",
+      "band": "Last_Day",
+      "tile": "h27v07",
+      "proc_date": "2024162182905"
+    },
+    {
+      "modis_date": "A2024092",
+      "calendar_date": "2024-04-01",
+      "band": "QA",
+      "tile": "h27v07",
+      "proc_date": "2024162182905"
+    }
+  ]
+}
