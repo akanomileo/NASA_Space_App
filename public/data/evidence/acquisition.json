@@ -1,137 +1,124 @@
 {
-  "generated_at": "2026-11-12T04:05:04.412956+00:00",
-  "real_pairs_processed": 12,
-  "pilot_samples": 60,
-  "optical_collection": "Sentinel-2 C1 L2A / Earth Search",
-  "viirs_swaths": {
-    "status": "unavailable",
-    "reason": "Earthdata authorization required; no authenticated swaths downloaded"
-  },
-  "incident_records": {
-    "status": "not_supplied"
-  },
-  "review_status": "All source pairs await independent human review; candidates are not wildfire labels",
-  "selection_limit": "Initial imagery subset: 12 dry-season cell-months, two per year and latitude third; not representative validation.",
-  "samples": [
+  "items": [
     {
-      "sample_id": "25_400_2024-03",
+      "sample_id": "rf_01_panlaung_1_2024-03",
+      "forest_id": "rf_01_panlaung",
       "period": "2024-03",
-      "before_id": "S2B_T46QGF_20240305T041610_L2A",
-      "after_id": "S2A_T46QGF_20240330T042022_L2A",
-      "clear_overlap_fraction": 0.9876,
-      "candidate_count": 36,
-      "label": "unknown",
-      "locked": false
+      "asset_base": "/data/evidence/assets/rf_01_panlaung_1_2024-03"
     },
     {
-      "sample_id": "25_401_2025-02",
+      "sample_id": "rf_01_panlaung_2_2025-02",
+      "forest_id": "rf_01_panlaung",
       "period": "2025-02",
-      "before_id": "S2C_T46QGF_20250203T041457_L2A",
-      "after_id": "S2B_T46QGF_20250228T041602_L2A",
-      "clear_overlap_fraction": 0.985,
-      "candidate_count": 60,
-      "label": "unknown",
-      "locked": false
+      "asset_base": "/data/evidence/assets/rf_01_panlaung_2_2025-02"
     },
     {
-      "sample_id": "26_405_2025-02",
+      "sample_id": "rf_02_kabaung_1_2024-03",
+      "forest_id": "rf_02_kabaung",
+      "period": "2024-03",
+      "asset_base": "/data/evidence/assets/rf_02_kabaung_1_2024-03"
+    },
+    {
+      "sample_id": "rf_02_kabaung_2_2025-02",
+      "forest_id": "rf_02_kabaung",
       "period": "2025-02",
-      "before_id": "S2C_T46QGF_20250203T041457_L2A",
-      "after_id": "S2B_T46QGF_20250228T041602_L2A",
-      "clear_overlap_fraction": 0.9997,
-      "candidate_count": 2,
-      "label": "unknown",
-      "locked": false
+      "asset_base": "/data/evidence/assets/rf_02_kabaung_2_2025-02"
     },
     {
-      "sample_id": "28_389_2024-12",
-      "period": "2024-12",
-      "before_id": "S2A_T46QGE_20241202T040738_L2A",
-      "after_id": "S2B_T46QGE_20241230T042043_L2A",
-      "clear_overlap_fraction": 0.9319,
-      "candidate_count": 2,
-      "label": "unknown",
-      "locked": false
+      "sample_id": "rf_03_ngalaik_1_2024-03",
+      "forest_id": "rf_03_ngalaik",
+      "period": "2024-03",
+      "asset_base": "/data/evidence/assets/rf_03_ngalaik_1_2024-03"
     },
     {
-      "sample_id": "28_396_2025-01",
-      "period": "2025-01",
-      "before_id": "S2A_T46QGE_20250101T040413_L2A",
-      "after_id": "S2B_T46QGE_20250126T040657_L2A",
-      "clear_overlap_fraction": 0.9765,
-      "candidate_count": 66,
-      "label": "unknown",
-      "locked": false
-    },
-    {
-      "sample_id": "28_398_2025-03",
+      "sample_id": "rf_03_ngalaik_2_2025-03",
+      "forest_id": "rf_03_ngalaik",
       "period": "2025-03",
-      "before_id": "S2C_T46QGE_20250302T040537_L2A",
-      "after_id": "S2B_T46QGE_20250330T042320_L2A",
-      "clear_overlap_fraction": 0.9848,
-      "candidate_count": 70,
-      "label": "unknown",
-      "locked": false
+      "asset_base": "/data/evidence/assets/rf_03_ngalaik_2_2025-03"
     },
     {
-      "sample_id": "28_409_2024-12",
-      "period": "2024-12",
-      "before_id": "S2A_T46QGF_20241205T042122_L2A",
-      "after_id": "S2B_T46QGF_20241230T042043_L2A",
-      "clear_overlap_fraction": 0.9998,
-      "candidate_count": 12,
-      "label": "unknown",
-      "locked": false
+      "sample_id": "rf_04_yenwe_1_2024-03",
+      "forest_id": "rf_04_yenwe",
+      "period": "2024-03",
+      "asset_base": "/data/evidence/assets/rf_04_yenwe_1_2024-03"
     },
     {
-      "sample_id": "31_411_2024-04",
-      "period": "2024-04",
-      "before_id": "S2B_T46QGF_20240401T040809_L2A",
-      "after_id": "S2A_T46QGF_20240429T042127_L2A",
-      "clear_overlap_fraction": 0.5916,
-      "candidate_count": 4,
-      "label": "unknown",
-      "locked": false
+      "sample_id": "rf_04_yenwe_2_2025-02",
+      "forest_id": "rf_04_yenwe",
+      "period": "2025-02",
+      "asset_base": "/data/evidence/assets/rf_04_yenwe_2_2025-02"
     },
     {
-      "sample_id": "34_416_2024-04",
-      "period": "2024-04",
-      "before_id": "S2B_T46QHF_20240401T040809_L2A",
-      "after_id": "S2A_T46QGF_20240429T042127_L2A",
-      "clear_overlap_fraction": 0.9916,
-      "candidate_count": 1,
-      "label": "unknown",
-      "locked": false
-    },
-    {
-      "sample_id": "35_414_2024-02",
+      "sample_id": "rf_05_south_zamaye_1_2024-02",
+      "forest_id": "rf_05_south_zamaye",
       "period": "2024-02",
-      "before_id": "S2B_T46QHF_20240201T040641_L2A",
-      "after_id": "S2A_T46QHF_20240229T041932_L2A",
-      "clear_overlap_fraction": 0.9961,
-      "candidate_count": 107,
-      "label": "unknown",
-      "locked": false
+      "asset_base": "/data/evidence/assets/rf_05_south_zamaye_1_2024-02"
     },
     {
-      "sample_id": "35_421_2025-03",
+      "sample_id": "rf_05_south_zamaye_2_2025-03",
+      "forest_id": "rf_05_south_zamaye",
       "period": "2025-03",
-      "before_id": "S2C_T46QHG_20250302T040537_L2A",
-      "after_id": "S2B_T46QHG_20250330T041545_L2A",
-      "clear_overlap_fraction": 0.9993,
-      "candidate_count": 2,
-      "label": "unknown",
-      "locked": false
+      "asset_base": "/data/evidence/assets/rf_05_south_zamaye_2_2025-03"
     },
     {
-      "sample_id": "36_417_2025-04",
-      "period": "2025-04",
-      "before_id": "S2C_T46QHF_20250401T040909_L2A",
-      "after_id": "S2A_T46QHF_20250426T041213_L2A",
-      "clear_overlap_fraction": 0.9925,
-      "candidate_count": 0,
-      "label": "unknown",
-      "locked": false
+      "sample_id": "rf_06_namhton_1_2024-03",
+      "forest_id": "rf_06_namhton",
+      "period": "2024-03",
+      "asset_base": "/data/evidence/assets/rf_06_namhton_1_2024-03"
+    },
+    {
+      "sample_id": "rf_06_namhton_2_2025-03",
+      "forest_id": "rf_06_namhton",
+      "period": "2025-03",
+      "asset_base": "/data/evidence/assets/rf_06_namhton_2_2025-03"
+    },
+    {
+      "sample_id": "rf_07_yinmar_1_2024-03",
+      "forest_id": "rf_07_yinmar",
+      "period": "2024-03",
+      "asset_base": "/data/evidence/assets/rf_07_yinmar_1_2024-03"
+    },
+    {
+      "sample_id": "rf_07_yinmar_2_2025-02",
+      "forest_id": "rf_07_yinmar",
+      "period": "2025-02",
+      "asset_base": "/data/evidence/assets/rf_07_yinmar_2_2025-02"
+    },
+    {
+      "sample_id": "rf_08_wunbaik_1_2024-02",
+      "forest_id": "rf_08_wunbaik",
+      "period": "2024-02",
+      "asset_base": "/data/evidence/assets/rf_08_wunbaik_1_2024-02"
+    },
+    {
+      "sample_id": "rf_08_wunbaik_2_2025-03",
+      "forest_id": "rf_08_wunbaik",
+      "period": "2025-03",
+      "asset_base": "/data/evidence/assets/rf_08_wunbaik_2_2025-03"
+    },
+    {
+      "sample_id": "rf_09_kadon_kani_1_2024-03",
+      "forest_id": "rf_09_kadon_kani",
+      "period": "2024-03",
+      "asset_base": "/data/evidence/assets/rf_09_kadon_kani_1_2024-03"
+    },
+    {
+      "sample_id": "rf_09_kadon_kani_2_2025-02",
+      "forest_id": "rf_09_kadon_kani",
+      "period": "2025-02",
+      "asset_base": "/data/evidence/assets/rf_09_kadon_kani_2_2025-02"
+    },
+    {
+      "sample_id": "rf_10_pyindaye_1_2024-02",
+      "forest_id": "rf_10_pyindaye",
+      "period": "2024-02",
+      "asset_base": "/data/evidence/assets/rf_10_pyindaye_1_2024-02"
+    },
+    {
+      "sample_id": "rf_10_pyindaye_2_2025-03",
+      "forest_id": "rf_10_pyindaye",
+      "period": "2025-03",
+      "asset_base": "/data/evidence/assets/rf_10_pyindaye_2_2025-03"
     }
   ]
 }

@@ -10,3 +10,4 @@ python-multipart==0.0.32
 httpx==0.28.1
 requests==2.34.2
 joblib==1.5.3
+xgboost==2.1.3

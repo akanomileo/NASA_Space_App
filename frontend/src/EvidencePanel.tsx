@@ -1,14 +1,184 @@
-import {useEffect, useRef, useState} from 'react';
-import {Download, Eye, EyeOff, FileCheck, Images, LockKeyhole, ScanLine, ChevronDown, X} from 'lucide-react';
-import {booleanWithin} from '@turf/turf';
-import {Pilot, Sample, EvidenceLabel, agreement, validateReview} from './evidence';
-import {download, csv} from './data';
+import { useEffect, useRef, useState } from 'react';
+import maplibregl from 'maplibre-gl';
+import { Download, EyeOff, FileCheck, Images, LockKeyhole, ScanLine, ChevronDown, X, Play, Pause, RotateCcw, Flame, Maximize2 } from 'lucide-react';
+import { booleanWithin } from '@turf/turf';
+import { Pilot, Sample, EvidenceLabel, agreement, validateReview } from './evidence';
+import { download, csv } from './data';
+import { getForestName, getRegionName } from './reserves-i18n';
 
 interface Props {
-  pilot: Pilot; sample: Sample | undefined; t: (key: string) => string;
-  onSelect: (sample: Sample) => void; onReview: (sample: Sample) => void; onClose: () => void;
+  pilot: Pilot;
+  sample: Sample | undefined;
+  forestSamples: Sample[];
+  periodSamples: Sample[];
+  periodLabel: string;
+  selectedForestId?: string;
+  lang?: string;
+  t: (key: string) => string;
+  onSelect: (sample: Sample) => void;
+  onReview: (sample: Sample) => void;
+  onClose: () => void;
 }
-export function EvidencePanel({pilot, sample, t, onSelect, onReview, onClose}: Props) {
+
+function Burn3DDroneView({
+  center,
+  burnPolygon,
+  caption,
+  lang,
+}: {
+  center: [number, number];
+  burnPolygon: any;
+  caption: string;
+  lang: string;
+}) {
+  const dialogRef = useRef<HTMLDialogElement>(null);
+  const expandRef = useRef<HTMLButtonElement>(null);
+  const closeRef = useRef<HTMLButtonElement>(null);
+  const restoreFocus = useRef(false);
+  const [enlarged, setEnlarged] = useState(false);
+  const expandLabel = lang === 'mm' ? '3D မြင်ကွင်း ချဲ့ရန်' : 'Expand 3D view';
+  const closeLabel = lang === 'mm' ? '3D မြင်ကွင်း ပိတ်ရန်' : 'Close expanded 3D view';
+  const containerRef = useRef<HTMLDivElement>(null);
+  const mapRef = useRef<maplibregl.Map | null>(null);
+  const rafRef = useRef<number | null>(null);
+  const [orbiting, setOrbiting] = useState(true);
+  const orbitingRef = useRef(true);
+  orbitingRef.current = orbiting;
+
+  useEffect(() => {
+    if (!containerRef.current) return;
+    const map = new maplibregl.Map({
+      container: containerRef.current,
+      center,
+      zoom: 13.4,
+      pitch: 62,
+      bearing: -20,
+      attributionControl: false,
+      style: {
+        version: 8,
+        sources: {
+          satellite: {
+            type: 'raster',
+            tiles: ['https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}'],
+            tileSize: 256,
+          },
+          terrainDem: {
+            type: 'raster-dem',
+            tiles: ['https://s3.amazonaws.com/elevation-tiles-prod/terrarium/{z}/{x}/{y}.png'],
+            tileSize: 256,
+            encoding: 'terrarium',
+          },
+        },
+        layers: [{ id: 'satellite', type: 'raster', source: 'satellite' }],
+        terrain: { source: 'terrainDem', exaggeration: 1.75 },
+      },
+    });
+    mapRef.current = map;
+
+    map.on('load', () => {
+      const geoData = burnPolygon
+        ? { type: 'FeatureCollection', features: [{ type: 'Feature', geometry: burnPolygon, properties: {} }] }
+        : { type: 'FeatureCollection', features: [] };
+
+      map.addSource('burn-scar', { type: 'geojson', data: geoData as any });
+      map.addLayer({
+        id: 'burn-scar-fill',
+        type: 'fill',
+        source: 'burn-scar',
+        paint: { 'fill-color': '#fb7185', 'fill-opacity': 0.42 },
+      });
+      map.addLayer({
+        id: 'burn-scar-line',
+        type: 'line',
+        source: 'burn-scar',
+        paint: { 'line-color': '#fde047', 'line-width': 2.5 },
+      });
+
+      const loopOrbit = () => {
+        if (orbitingRef.current && mapRef.current) {
+          mapRef.current.setBearing((mapRef.current.getBearing() + 0.14) % 360);
+        }
+        rafRef.current = requestAnimationFrame(loopOrbit);
+      };
+      rafRef.current = requestAnimationFrame(loopOrbit);
+    });
+
+    map.on('dragstart', () => setOrbiting(false));
+
+    return () => {
+      if (rafRef.current) cancelAnimationFrame(rafRef.current);
+      map.remove();
+    };
+  }, [center[0], center[1], burnPolygon]);
+
+  useEffect(() => {
+    mapRef.current?.resize();
+    if (enlarged && dialogRef.current?.open) closeRef.current?.focus();
+    if (!enlarged && dialogRef.current && !dialogRef.current.open && restoreFocus.current) {
+      restoreFocus.current = false;
+      expandRef.current?.focus();
+    }
+  }, [enlarged]);
+
+  return (
+    <dialog
+      ref={dialogRef}
+      className="drone-3d-card"
+      aria-label={caption}
+      onClose={() => {
+        setEnlarged(false);
+        restoreFocus.current = true;
+      }}
+    >
+      <div ref={containerRef} className="drone-3d-canvas" aria-label="3D Drone Burn Area View" />
+      <span className="drone-3d-badge">3D DRONE LOOP</span>
+      <div className="drone-3d-controls">
+        <button type="button" onClick={() => setOrbiting((v) => !v)} title={orbiting ? 'Pause Orbit' : 'Resume Orbit'}>
+          {orbiting ? <Pause size={13} /> : <Play size={13} />}
+          <span>{orbiting ? 'Pause' : 'Orbit'}</span>
+        </button>
+        <button
+          type="button"
+          onClick={() => {
+            setOrbiting(true);
+            mapRef.current?.easeTo({ center, pitch: 62, zoom: 13.4, bearing: -20, duration: 700 });
+          }}
+          title="Reset Camera"
+        >
+          <RotateCcw size={13} />
+        </button>
+        {enlarged ? (
+          <button
+            ref={closeRef}
+            type="button"
+            title={closeLabel}
+            aria-label={closeLabel}
+            onClick={() => dialogRef.current?.close()}
+          >
+            <X size={16} aria-hidden="true" />
+          </button>
+        ) : (
+          <button
+            ref={expandRef}
+            type="button"
+            title={expandLabel}
+            aria-label={expandLabel}
+            aria-haspopup="dialog"
+            onClick={() => {
+              dialogRef.current?.showModal();
+              setEnlarged(true);
+            }}
+          >
+            <Maximize2 size={16} aria-hidden="true" />
+          </button>
+        )}
+      </div>
+      <div className="drone-3d-caption">{caption}</div>
+    </dialog>
+  );
+}
+
+export function EvidencePanel({ pilot, sample, forestSamples, periodSamples, periodLabel, selectedForestId, lang = 'en', t, onSelect, onReview, onClose }: Props) {
   const [position, setPosition] = useState(50);
   const [imageMode, setImageMode] = useState('compare');
   const [reviewer, setReviewer] = useState('');
@@ -22,92 +192,370 @@ export function EvidencePanel({pilot, sample, t, onSelect, onReview, onClose}: P
   const [expanded, setExpanded] = useState(!window.matchMedia('(max-width:760px)').matches);
   const [crosscheck, setCrosscheck] = useState<any>(null);
   const touchStart = useRef(0);
+
+  const activeSample: any = sample;
+
   useEffect(() => {
-    setReviewer(sample?.reviewer || ''); setReason(sample?.locked ? sample.reason : '');
-    setLabel(sample?.label || 'unknown'); setConfidence(sample?.review_confidence || 'low'); setChecked(false); setTemporal(false); setPolygon(null); setError('');
+    setPosition(50);
+    setReviewer(activeSample?.reviewer || '');
+    setReason(activeSample?.locked ? activeSample.reason : '');
+    setLabel(activeSample?.label || 'unknown');
+    setConfidence(activeSample?.review_confidence || 'low');
+    setChecked(false);
+    setTemporal(false);
+    setPolygon(null);
+    setError('');
     setCrosscheck(null);
-    if (sample?.locked && sample.imagery) {
-      fetch(sample.imagery.asset_base + '/crosscheck.json').then(r=>r.ok?r.json():null).then(setCrosscheck).catch(()=>{});
+    if (activeSample?.locked && activeSample.imagery) {
+      fetch(activeSample.imagery.asset_base + '/crosscheck.json')
+        .then((r) => (r.ok ? r.json() : null))
+        .then(setCrosscheck)
+        .catch(() => {});
     }
-  }, [sample?.sample_id, sample?.locked]);
-  const result = agreement(pilot.samples);
-  const score = (value: number|null) => value == null ? '—' : (value*100).toFixed(1)+'%';
+  }, [activeSample?.sample_id, activeSample?.locked]);
+
+  const result = agreement(forestSamples);
+  const score = (value: number | null) => (value == null ? '—' : (value * 100).toFixed(1) + '%');
+
   const save = () => {
-    if (!sample) return;
-    const problem = validateReview(sample,label,reviewer,reason,checked,temporal,polygon,pilot);
-    if (problem) {setError(t(problem));return;}
-    onReview({...sample,label,reviewer,reason,locked:true,polygon,review_confidence:confidence,reviewed_at:new Date().toISOString(),confounders_checked:checked,temporal_adequacy_confirmed:temporal});
+    if (!activeSample) return;
+    const problem = validateReview(activeSample, label, reviewer, reason, checked, temporal, polygon, pilot);
+    if (problem) {
+      setError(t(problem));
+      return;
+    }
+    onReview({
+      ...activeSample,
+      label,
+      reviewer,
+      reason,
+      locked: true,
+      polygon,
+      review_confidence: confidence,
+      reviewed_at: new Date().toISOString(),
+      confounders_checked: checked,
+      temporal_adequacy_confirmed: temporal,
+    });
     setError(t('reviewSaved'));
   };
+
   const uploadPolygon = async (file?: File) => {
-    if(!file || !sample) return;
+    if (!file || !activeSample) return;
     try {
-      const data=JSON.parse(await file.text());
-      const feature=data.type==='Feature'?data:{type:'Feature',geometry:data,properties:{}};
-      if(!['Polygon','MultiPolygon'].includes(feature.geometry.type) || !booleanWithin(feature,{type:'Feature',geometry:sample.geometry,properties:{}})) throw Error();
-      setPolygon(feature);setError('');
-    } catch {setError(t('polygonRequired'));}
+      const data = JSON.parse(await file.text());
+      const feature = data.type === 'Feature' ? data : { type: 'Feature', geometry: data, properties: {} };
+      if (!['Polygon', 'MultiPolygon'].includes(feature.geometry.type) || !booleanWithin(feature, { type: 'Feature', geometry: activeSample.geometry, properties: {} }))
+        throw Error();
+      setPolygon(feature);
+      setError('');
+    } catch {
+      setError(t('polygonRequired'));
+    }
   };
-  const exportReviews=()=>download('firewatch-reviews.json',JSON.stringify(pilot.samples.filter(s=>s.locked).map(s=>({
-    sample_id:s.sample_id,label:s.label,reviewer:s.reviewer,reason:s.reason,polygon:s.polygon,
-    confounders_checked:s.confounders_checked,temporal_adequacy_confirmed:s.temporal_adequacy_confirmed,
-    review_origin:'human',review_confidence:s.review_confidence,reviewed_at:s.reviewed_at,
-  })),null,2));
-  const exportTable=()=>download('firewatch-validation.csv',csv(pilot.samples.map(s=>({
-    sample_id:s.sample_id,cell_id:s.cell_id,period:s.period,label:s.label,review_status:s.locked?'locked':'pending',
-    reviewer:s.reviewer,review_confidence:s.review_confidence||'',reviewed_at:s.reviewed_at||'',rationale:s.reason,
-    before_scene:s.imagery?.before_id||'',after_scene:s.imagery?.after_id||'',
-    before_date:s.imagery?.before_date||'',after_date:s.imagery?.after_date||'',clear_overlap:s.imagery?.clear_overlap_fraction??'',
-    qualifying_viirs_count:s.locked?s.viirs_count:'blinded',coverage_status:s.coverage.status,
-    season:s.season,crs:'EPSG:4326',area_crs:'EPSG:32647',schema_version:pilot.schema_version,
-    attribution:'NASA FIRMS; Copernicus Sentinel-2 / Earth Search',aoi:'approximate_bago_yoma_v1',exported_at:new Date().toISOString(),
-  }))),'text/csv');
-  const exportPolygons=()=>download('firewatch-reviewed-polygons.geojson',JSON.stringify({type:'FeatureCollection',features:pilot.samples.filter(s=>s.locked&&s.polygon).map(s=>({type:'Feature',geometry:s.polygon.geometry||s.polygon,properties:{sample_id:s.sample_id,cell_id:s.cell_id,period:s.period,label:s.label,reviewer:s.reviewer,review_confidence:s.review_confidence,reviewed_at:s.reviewed_at,before_scene:s.imagery?.before_id,after_scene:s.imagery?.after_id,crs:'EPSG:4326',schema_version:pilot.schema_version,attribution:'Copernicus Sentinel-2 / Earth Search; independent reviewer'}}))},null,2));
-  return <aside className={`glass evidence-panel ${expanded?'expanded':'collapsed'}`} aria-label={t('evidence')}>
-    <div className="sheet-handle" onTouchStart={e=>{touchStart.current=e.touches[0].clientY;}} onTouchEnd={e=>setExpanded(e.changedTouches[0].clientY<touchStart.current)}>
-      <button onClick={()=>setExpanded(!expanded)} aria-expanded={expanded} aria-label={t('evidence')}><span/></button>
-    </div>
-    <div className="drawer-heading"><div><span className="eyebrow">{t('pilot')}</span><h2>{t('evidence')}</h2></div><button className="round-button" onClick={onClose} aria-label={t('close')}><X size={18}/></button></div>
-    {!expanded&&sample&&<p className="collapsed-selection">{sample.cell_id} · {sample.period} · {sample.locked?t(sample.label):t('reviewPending')}</p>}
-    <div className="evidence-scroll">
-      <label className="field-label">{t('selection')}<select value={sample?.sample_id || ''} onChange={e=>onSelect(pilot.samples.find(s=>s.sample_id===e.target.value)!)}>
-        <option value="" disabled>{t('noSample')}</option>
-        {[...pilot.samples].sort((a,b)=>Number(!!b.imagery)-Number(!!a.imagery)||a.sample_id.localeCompare(b.sample_id)).map(s=><option value={s.sample_id} key={s.sample_id}>{s.cell_id} · {s.period}{s.imagery?' ◉':''}</option>)}
-      </select></label>
-      {sample && <>
-        <div className="review-status"><span className={`status-label ${sample.locked?'locked':''}`}>{sample.locked?<FileCheck size={14}/>:<EyeOff size={14}/>} {sample.locked?t(sample.label):t('reviewPending')}</span><span>5 km</span></div>
-        {!sample.locked && <p className="quiet-note"><EyeOff size={14}/>{t('blind')}</p>}
-        {sample.imagery ? <>
-          <div className="image-switch" role="group" aria-label={t('compare')}>
-            {['before','compare','after'].map(mode=><button key={mode} className={imageMode===mode?'active':''} onClick={()=>setImageMode(mode)}>{t(mode)}</button>)}
+
+  const exportReviews = () =>
+    download(
+      'myanmar-forestwatch-reviews.json',
+      JSON.stringify(
+        forestSamples
+          .filter((s) => s.locked)
+          .map((s: any) => ({
+            sample_id: s.sample_id,
+            forest_name: s.forest_name,
+            label: s.label,
+            reviewer: s.reviewer,
+            reason: s.reason,
+            polygon: s.polygon,
+            reviewed_at: s.reviewed_at,
+          })),
+        null,
+        2
+      )
+    );
+
+  const exportTable = () =>
+    download(
+      'myanmar-forestwatch-validation.csv',
+      csv(
+        forestSamples.map((s: any) => ({
+          sample_id: s.sample_id,
+          forest_name: s.forest_name,
+          region: s.region_en,
+          cell_id: s.cell_id,
+          period: s.period,
+          burned_area_ha: s.burned_area_ha,
+          severity: s.severity,
+          label: s.label,
+          viirs_count: s.viirs_count,
+          aoi: 'myanmar_10_reserved_forests_v2',
+        }))
+      ),
+      'text/csv'
+    );
+
+  const exportPolygons = () =>
+    download(
+      'myanmar-forestwatch-burn-polygons.geojson',
+      JSON.stringify(
+        {
+          type: 'FeatureCollection',
+          features: forestSamples
+            .filter((s: any) => s.polygon)
+            .map((s: any) => ({
+              type: 'Feature',
+              geometry: s.polygon.geometry || s.polygon,
+              properties: {
+                sample_id: s.sample_id,
+                forest_name: s.forest_name,
+                region: s.region_en,
+                period: s.period,
+                burned_area_ha: s.burned_area_ha,
+                severity: s.severity,
+              },
+            })),
+        },
+        null,
+        2
+      )
+    );
+
+  const center: [number, number] = activeSample?.centroid || [activeSample?.lon ?? 96.12, activeSample?.lat ?? 18.92];
+  const localizedForest = getForestName(activeSample, lang);
+  const localizedRegion = getRegionName(activeSample, lang);
+  const simpleCaption =
+    (lang === 'mm' ? activeSample?.caption_mm : activeSample?.caption) ||
+    `${localizedForest || activeSample?.cell_id} • ${activeSample?.period} • ${activeSample?.burned_area_ha || 220} ${lang === 'mm' ? 'ဟက်တာ' : 'ha'}`;
+
+  return (
+    <aside className={`glass evidence-panel ${expanded ? 'expanded' : 'collapsed'}`} aria-label={t('evidence')}>
+      <div
+        className="sheet-handle"
+        onTouchStart={(e) => {
+          touchStart.current = e.touches[0].clientY;
+        }}
+        onTouchEnd={(e) => setExpanded(e.changedTouches[0].clientY < touchStart.current)}
+      >
+        <button onClick={() => setExpanded(!expanded)} aria-expanded={expanded} aria-label={t('evidence')}>
+          <span />
+        </button>
+      </div>
+
+      <div className="drawer-heading">
+        <div>
+          <span className="eyebrow">{t('pilot')}</span>
+          <h2>{t('evidence')}</h2>
+        </div>
+        <button className="round-button" onClick={onClose} aria-label={t('close')}>
+          <X size={18} />
+        </button>
+      </div>
+
+      {!expanded && activeSample && <p className="collapsed-selection">{simpleCaption}</p>}
+
+      <div className="evidence-scroll">
+        {periodSamples.length === 0 ? (
+          <div className="empty-evidence" role="status">
+            <Images size={32} aria-hidden="true" />
+            <p>{periodLabel} · {t('noEvidenceForMonth')}</p>
           </div>
-          <div className="image-comparison">
-            <img src={sample.imagery.asset_base+'/after.png'} alt={`${t('after')} ${sample.imagery.after_date.slice(0,10)}`} />
-            <img className="before-image" src={sample.imagery.asset_base+'/before.png'} alt={`${t('before')} ${sample.imagery.before_date.slice(0,10)}`} style={{clipPath:`inset(0 ${imageMode==='before'?0:imageMode==='after'?100:100-position}% 0 0)`}}/>
-            {imageMode==='compare'&&<><div className="compare-line" style={{left:position+'%'}}><ScanLine size={18}/></div><input type="range" min="0" max="100" value={position} onChange={e=>setPosition(Number(e.target.value))} aria-label={t('swipe')}/></>}
-            {imageMode!=='after'&&<span className="image-caption left">{t('before')}</span>}{imageMode!=='before'&&<span className="image-caption right">{t('after')}</span>}
+        ) : (
+          <label className="field-label">
+            {lang === 'mm' ? `မီးလောင်မှု အထောက်အထား (${periodSamples.length} ခု)` : `Burnt Evidence (${periodSamples.length} curated)`}
+            <select
+              value={activeSample?.sample_id || ''}
+              onChange={(e) => {
+                const found = periodSamples.find((s) => s.sample_id === e.target.value);
+                if (found) onSelect(found);
+              }}
+            >
+              <option value="" disabled>
+                {t('noSample')}
+              </option>
+              {periodSamples.map((s: any) => (
+                <option value={s.sample_id} key={s.sample_id}>
+                  {getForestName(s, lang)} · {s.date_label || s.period} ({s.burned_area_ha} {lang === 'mm' ? 'ဟက်တာ' : 'ha'})
+                </option>
+              ))}
+            </select>
+          </label>
+        )}
+
+        {selectedForestId && selectedForestId !== 'all' && periodSamples.length > 1 && (
+          <div style={{ display: 'grid', gridTemplateColumns: periodSamples.length > 2 ? 'repeat(3, 1fr)' : '1fr 1fr', gap: 8, margin: '6px 0' }}>
+            {periodSamples.map((item: any, idx: number) => (
+              <button
+                key={item.sample_id}
+                type="button"
+                className={`outline-button ${item.sample_id === activeSample?.sample_id ? 'active' : ''}`}
+                onClick={() => onSelect(item)}
+                style={{
+                  justifyContent: 'center',
+                  borderColor: item.sample_id === activeSample?.sample_id ? 'var(--mint)' : undefined,
+                }}
+              >
+                <Flame size={14} />
+                <span>
+                  #{idx + 1} · {item.date_label}
+                </span>
+              </button>
+            ))}
           </div>
-          <p className="image-key">{t('falseColor')} · {sample.imagery.resolution_m} m</p>
-          <div className="image-dates"><span>{sample.imagery.before_date.slice(0,10)}</span><span>{sample.imagery.after_date.slice(0,10)}</span></div>
-          <div className="evidence-stat"><span>{t('clearOverlap')}</span><strong>{(sample.imagery.clear_overlap_fraction*100).toFixed(1)}%</strong></div>
-          <div className="clear-meter"><span style={{width:sample.imagery.clear_overlap_fraction*100+'%'}}/></div>
-          <div className="evidence-stat"><span>{t('candidate')}</span><strong>{sample.imagery.candidate_count}</strong></div>
-          <details className="evidence-details"><summary>{t('viewSources')}</summary><p>{sample.imagery.before_id}<br/>{sample.imagery.after_id}</p><p>{sample.imagery.qa_method}</p><a href={sample.imagery.asset_base+'/metadata.json'} target="_blank" rel="noreferrer">{t('dataset')} ↗</a><a href={sample.imagery.asset_base+'/dnbr.tif'} download>dNBR GeoTIFF ↓</a></details>
-        </>:<div className="empty-evidence"><Images size={32}/><p>{t('awaitingImages')}</p></div>}
-        <section className="coverage-card"><div><ScanLine size={17}/><strong>{t('viirsCoverage')}</strong></div>{sample.coverage.passes.length?<><span className="coverage-badge">{sample.coverage.passes.length} {t('retrievedPasses')}</span><p>{t('partialCoverage')}</p>{sample.coverage.passes.map(pass=><details key={pass.pass_id}><summary>{pass.timestamp.slice(0,16).replace('T',' ')} UTC · {pass.usable_land_fraction==null?'—':(pass.usable_land_fraction*100).toFixed(1)+'%'}</summary><p>{pass.usable_pixels} / {pass.land_pixels} {t('usablePixels')}</p>{sample.locked?<p>{pass.qualifying_fire_pixels>0?`${pass.qualifying_fire_pixels} ${t('qualifying')}`:pass.usable_pixels>0?t('noPassHotspot'):t('coverageUnknown')}</p>:<p>{t('blind')}</p>}</details>)}</>:<><span className="coverage-badge"><i className="hatch-box"/>{t('coverageUnknown')}</span><p>{t('authNeeded')}</p></>}</section>
-        {sample.locked ? <section className="review-result"><strong>{t(sample.label)}</strong><p>{sample.reason}</p><span>{sample.reviewer}</span><div className="evidence-stat"><span>VIIRS · {sample.period}</span><b>{sample.viirs_count}</b></div><details><summary>{t('crosscheck')}</summary><p>{crosscheck?`${crosscheck.burned_pixels} / ${crosscheck.valid_pixels} ${t('cells')} · 500 m`:t('notAvailable')}</p></details></section> : <details className="review-form"><summary><FileCheck size={16}/>{t('review')}<ChevronDown size={16}/></summary>
-          <label>{t('labels')}<select value={label} onChange={e=>setLabel(e.target.value as EvidenceLabel)}>{['unknown','burn_scar','no_burn_evidence'].map(value=><option key={value} value={value}>{t(value)}</option>)}</select></label>
-          <label>{t('reviewer')}<input value={reviewer} onChange={e=>setReviewer(e.target.value)} maxLength={100}/></label>
-          <label>{t('reviewConfidence')}<select value={confidence} onChange={e=>setConfidence(e.target.value)}>{['low','medium','high'].map(value=><option key={value} value={value}>{t('confidence_'+value)}</option>)}</select></label>
-          <label>{t('rationale')}<textarea value={reason} onChange={e=>setReason(e.target.value)} rows={3}/></label>
-          {label==='burn_scar'&&<label>{t('polygonRequired')}<input type="file" accept=".json,.geojson" onChange={e=>uploadPolygon(e.target.files?.[0])}/></label>}
-          {label!=='unknown'&&<label className="check-label"><input type="checkbox" checked={checked} onChange={e=>setChecked(e.target.checked)}/>{t('confounders')}</label>}
-          {label==='no_burn_evidence'&&<label className="check-label"><input type="checkbox" checked={temporal} onChange={e=>setTemporal(e.target.checked)}/>{t('temporal')}</label>}
-          <button className="action-button" onClick={save}><LockKeyhole size={15}/>{t('lockReview')}</button><p className="quiet-note">{t('reviewLocal')}</p>
-        </details>}
-        {error&&<p className="form-message" role="status">{error}</p>}
-      </>}
-      <section className="pilot-summary"><h3>{t('validation')}</h3><div className="metric-grid"><div><strong>{result.known}/{pilot.samples.length}</strong><span>{t('known')}</span></div><div><strong>{score(result.f1)}</strong><span>F1</span></div><div><strong>{score(result.accuracy)}</strong><span>{t('accuracy')}</span></div></div><p>{result.known?t('sampleOnly'):t('pendingMetric')}</p><details><summary>{t('agreementDetails')}</summary><table className="evidence-table"><tbody><tr><th>TP</th><td>{result.tp}</td><th>FP</th><td>{result.fp}</td></tr><tr><th>FN</th><td>{result.fn}</td><th>TN</th><td>{result.tn}</td></tr><tr><th>{t('precision')}</th><td colSpan={3}>{score(result.precision)} · n={result.tp+result.fp}</td></tr><tr><th>{t('recall')}</th><td colSpan={3}>{score(result.recall)} · n={result.tp+result.fn}</td></tr><tr><th>{t('unknown')}</th><td colSpan={3}>{result.unknown}</td></tr></tbody></table><p>{t('matrixMeaning')}</p>{['dry_Nov_Apr','wet_May_Oct'].map(season=>{const rows=pilot.samples.filter(s=>s.season===season),score=agreement(rows);return <p key={season}>{t(season)} · {score.known}/{rows.length} {t('known')} · {rows.filter(s=>s.coverage.passes.length).length} {t('withCoverage')}</p>;})}</details><details className="review-table"><summary>{t('reviewTable')}</summary><table className="evidence-table"><thead><tr><th>{t('selection')}</th><th>{t('labels')}</th></tr></thead><tbody>{pilot.samples.map(s=><tr key={s.sample_id}><td><button onClick={()=>onSelect(s)}>{s.cell_id}<br/>{s.period}</button></td><td>{s.locked?t(s.label):t('reviewPending')}</td></tr>)}</tbody></table></details><div className="evidence-exports"><button className="outline-button" onClick={exportReviews}><Download size={15}/>{t('exportReviews')}</button><button className="outline-button" onClick={exportTable}>{t('validationCsv')}</button><button className="outline-button" onClick={exportPolygons}>{t('polygonExport')}</button></div></section>
-    </div>
-  </aside>;
+        )}
+
+        {activeSample && (
+          <>
+            {/* 3D Drone Orbit View with Simple Caption */}
+            <Burn3DDroneView center={center} burnPolygon={activeSample.polygon} caption={simpleCaption} lang={lang} />
+
+            <div className="review-status">
+              <span className={`status-label ${activeSample.locked ? 'locked' : ''}`}>
+                {activeSample.locked ? <FileCheck size={14} /> : <EyeOff size={14} />}{' '}
+                {activeSample.locked ? `${activeSample.burned_area_ha} ha · ${activeSample.severity}` : t('reviewPending')}
+              </span>
+              <span>{localizedRegion}</span>
+            </div>
+
+            {activeSample.imagery ? (
+              <>
+                <div className="image-switch" role="group" aria-label={t('compare')}>
+                  {['before', 'compare', 'after'].map((m) => (
+                    <button key={m} className={imageMode === m ? 'active' : ''} onClick={() => setImageMode(m)}>
+                      {t(m)}
+                    </button>
+                  ))}
+                </div>
+                <div className="image-comparison">
+                  <img src={activeSample.imagery.asset_base + '/after.png'} alt={`${t('after')} ${activeSample.imagery.after_date.slice(0, 10)}`} />
+                  <img
+                    className="before-image"
+                    src={activeSample.imagery.asset_base + '/before.png'}
+                    alt={`${t('before')} ${activeSample.imagery.before_date.slice(0, 10)}`}
+                    style={{ clipPath: `inset(0 ${imageMode === 'before' ? 0 : imageMode === 'after' ? 100 : 100 - position}% 0 0)` }}
+                  />
+                  {imageMode === 'compare' && (
+                    <>
+                      <div className="compare-line" style={{ left: position + '%' }}>
+                        <ScanLine size={18} />
+                      </div>
+                      <input type="range" min="0" max="100" value={position} onChange={(e) => setPosition(Number(e.target.value))} aria-label={t('swipe')} />
+                    </>
+                  )}
+                  {imageMode !== 'after' && <span className="image-caption left">{t('before')}</span>}
+                  {imageMode !== 'before' && <span className="image-caption right">{t('after')}</span>}
+                </div>
+                <div className="image-dates">
+                  <span>{activeSample.imagery.before_date.slice(0, 10)}</span>
+                  <span>{activeSample.imagery.after_date.slice(0, 10)}</span>
+                </div>
+                <div className="evidence-stat">
+                  <span>{lang === 'mm' ? 'လောင်ကျွမ်းဧရိယာ' : 'Burned Area'}</span>
+                  <strong>{activeSample.burned_area_ha} {lang === 'mm' ? 'ဟက်တာ' : 'ha'}</strong>
+                </div>
+                <div className="evidence-stat">
+                  <span>VIIRS Hotspots</span>
+                  <strong>{activeSample.viirs_count}</strong>
+                </div>
+                <details className="evidence-details">
+                  <summary>{t('viewSources')}</summary>
+                  <p>{simpleCaption}</p>
+                  <a href={activeSample.imagery.asset_base + '/metadata.json'} target="_blank" rel="noreferrer">
+                    {t('dataset')} ↗
+                  </a>
+                  <a href={activeSample.imagery.asset_base + '/dnbr.tif'} download>
+                    dNBR GeoTIFF ↓
+                  </a>
+                </details>
+              </>
+            ) : (
+              <div className="empty-evidence">
+                <Images size={32} />
+                <p>{t('awaitingImages')}</p>
+              </div>
+            )}
+
+            {!activeSample.locked && (
+              <details className="review-form">
+                <summary>
+                  <FileCheck size={16} />
+                  {t('review')}
+                  <ChevronDown size={16} />
+                </summary>
+                <label>
+                  {t('labels')}
+                  <select value={label} onChange={(e) => setLabel(e.target.value as EvidenceLabel)}>
+                    {['unknown', 'burn_scar', 'no_burn_evidence'].map((value) => (
+                      <option key={value} value={value}>
+                        {t(value)}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <label>
+                  {t('reviewer')}
+                  <input value={reviewer} onChange={(e) => setReviewer(e.target.value)} maxLength={100} />
+                </label>
+                <label>
+                  {t('rationale')}
+                  <textarea value={reason} onChange={(e) => setReason(e.target.value)} rows={2} />
+                </label>
+                {label === 'burn_scar' && (
+                  <label>
+                    {t('polygonRequired')}
+                    <input type="file" accept=".json,.geojson" onChange={(e) => uploadPolygon(e.target.files?.[0])} />
+                  </label>
+                )}
+                {label !== 'unknown' && (
+                  <label className="check-label">
+                    <input type="checkbox" checked={checked} onChange={(e) => setChecked(e.target.checked)} />
+                    {t('confounders')}
+                  </label>
+                )}
+                <button className="action-button" onClick={save}>
+                  <LockKeyhole size={15} />
+                  {t('lockReview')}
+                </button>
+              </details>
+            )}
+            {error && (
+              <p className="form-message" role="status">
+                {error}
+              </p>
+            )}
+          </>
+        )}
+
+        <section className="pilot-summary">
+          <h3>{lang === 'mm' ? 'ရွေးချယ်ထားသော မီးလောင်မှုအနှစ်ချုပ်' : 'Curated Burn Summary'}</h3>
+          <div className="metric-grid">
+            <div>
+              <strong>
+                {result.known}/{forestSamples.length}
+              </strong>
+              <span>Verified</span>
+            </div>
+            <div>
+              <strong>{score(result.f1)}</strong>
+              <span>F1</span>
+            </div>
+            <div>
+              <strong>10+1</strong>
+              <span>{lang === 'mm' ? 'သစ်တောနှင့် ပဲခူးရိုးမ' : 'Reserves + Bago'}</span>
+            </div>
+          </div>
+          <div className="evidence-exports">
+            <button className="outline-button" onClick={exportReviews}>
+              <Download size={15} />
+              {t('exportReviews')}
+            </button>
+            <button className="outline-button" onClick={exportTable}>
+              {t('validationCsv')}
+            </button>
+            <button className="outline-button" onClick={exportPolygons}>
+              {t('polygonExport')}
+            </button>
+          </div>
+        </section>
+      </div>
+    </aside>
+  );
 }
